@@ -5,6 +5,7 @@ This repository contains computer code for reproducing the results described in 
 ArXiv preprint link: https://arxiv.org/abs/2602.04491
 
 ## Table of Contents
+
 [Getting Started](#getting-started)  
 &nbsp;&nbsp;↳ [Environment Setup](#environment-setup)  
 &nbsp;&nbsp;↳ [CPU / GPU Execution](#cpu--gpu-execution)
@@ -27,7 +28,7 @@ ArXiv preprint link: https://arxiv.org/abs/2602.04491
 &nbsp;&nbsp;↳ [Illustrative Figures](#illustrative-figures-manuscript-diagrams)  
 &nbsp;&nbsp;↳ [Experimental Result Visualizations](#experimental-result-visualizations)
 
-[Questions and Feedback](#questions-and-feedback)  
+[Questions and Feedback](#questions-and-feedback)
 
 [Citation](#citation)
 
@@ -39,8 +40,8 @@ Clone this repository and change into the project directory:
 
 ```bash
 
-git clone https://github.com/dionysus23334/Greedy-Gnorm.git
-cd Greedy-Gnorm
+git clone https://github.com/Sheridan-Stable/greedy-gnorm.git
+cd greedy-gnorm
 
 ```
 
@@ -54,6 +55,7 @@ We recommend using **Python 3.9+**.
 conda create -n prune-test python=3.9 -y
 conda activate prune-test
 ```
+
 #### CPU / GPU Execution
 
 This implementation supports both CPU and GPU execution.
@@ -80,14 +82,11 @@ Each notebook can be executed independently unless otherwise specified.
 
 Unless noted otherwise, notebooks are expected to be run from the repository root directory.
 
-
-
 ### Data Preparation
 
 #### `data_processing.ipynb` — Dataset Inspection
 
 This notebook is used to **quickly inspect the raw dataset format** before connecting it to model inputs.
-
 
 ### Gradient Analysis and Diagnostics
 
@@ -100,7 +99,6 @@ This notebook investigates the **gradient behavior of attention head parameters*
 #### `greedy_pruning.ipynb` — Greedy Gradient-Norm Pruning (Prototype)
 
 This notebook provides an **early exploratory implementation** of greedy attention head pruning based on **Q/K/V gradient norms**, primarily used for **method validation and debugging**, rather than final experimental reporting.
-
 
 #### `greedyprune(BERT,ALBERT,ROBERTA,XLM-ROBERTA).ipynb` — Greedy Gradient-Norm-Based Pruning
 
@@ -123,10 +121,10 @@ To correctly handle **previously pruned heads**, the implementation expands redu
 
 **Supported Models**
 
-* BERT
-* ALBERT
-* RoBERTa
-* XLM-RoBERTa
+- BERT
+- ALBERT
+- RoBERTa
+- XLM-RoBERTa
 
 Each model uses its corresponding pretrained checkpoint and task-specific dataset.
 
@@ -142,14 +140,12 @@ The pruning procedure is fully self-contained and does not rely on precomputed i
 
 The notebook produces the following output files:
 
-* `pruned_heads_accuracy(BERT)basedonGreedyGnorm.csv`
-* `pruned_heads_accuracy(ALBERT)basedonGreedyGnorm.csv`
-* `pruned_heads_accuracy(ROBERTA)basedonGreedyGnorm.csv`
-* `pruned_heads_accuracy(XLM_ROBERTA)basedonGreedyGnorm.csv`
+- `pruned_heads_accuracy(BERT)basedonGreedyGnorm.csv`
+- `pruned_heads_accuracy(ALBERT)basedonGreedyGnorm.csv`
+- `pruned_heads_accuracy(ROBERTA)basedonGreedyGnorm.csv`
+- `pruned_heads_accuracy(XLM_ROBERTA)basedonGreedyGnorm.csv`
 
 Each CSV file records downstream task accuracy as a function of the number of pruned attention heads under greedy gradient-norm–based pruning.
-
-
 
 #### `InverseGreedyGnormPruning.ipynb` — Inverse Greedy-Gnorm Pruning
 
@@ -157,15 +153,12 @@ This notebook implements **inverse greedy gradient-norm–based attention head p
 
 **Results**
 
-* `pruned_heads_accuracy(BERT)basedonInverseGreedyGnorm.csv`
-* `pruned_heads_accuracy(ALBERT)basedonInverseGreedyGnorm.csv`
-* `pruned_heads_accuracy(ROBERTA)basedonInverseGreedyGnorm.csv`
-* `pruned_heads_accuracy(XLM_ROBERTA)basedonInverseGreedyGnorm.csv`
+- `pruned_heads_accuracy(BERT)basedonInverseGreedyGnorm.csv`
+- `pruned_heads_accuracy(ALBERT)basedonInverseGreedyGnorm.csv`
+- `pruned_heads_accuracy(ROBERTA)basedonInverseGreedyGnorm.csv`
+- `pruned_heads_accuracy(XLM_ROBERTA)basedonInverseGreedyGnorm.csv`
 
 Each file records downstream accuracy as a function of the number of pruned attention heads under **inverse greedy G-norm–based pruning**.
-
-
-
 
 ### Baseline and Comparative Pruning Methods
 
@@ -175,15 +168,14 @@ This notebook implements **random attention head pruning** for Transformer model
 
 **Results**
 
-* `BERTrandompruned_heads_data_50x25_1group.xlsx`
-* `BERTrandompruned_heads_data_50x25_2group.xlsx`
-* `BERTrandompruned_heads_data_50x25_concated.xlsx`
-* `ALBERTrandompruned_heads_data_25x13_1group.xlsx`
-* `ROBERTArandompruned_heads_data_25x25_1group.xlsx`
-* `XLM_ROBERTArandompruned_heads_data_25x25_1group.xlsx`
+- `BERTrandompruned_heads_data_50x25_1group.xlsx`
+- `BERTrandompruned_heads_data_50x25_2group.xlsx`
+- `BERTrandompruned_heads_data_50x25_concated.xlsx`
+- `ALBERTrandompruned_heads_data_25x13_1group.xlsx`
+- `ROBERTArandompruned_heads_data_25x25_1group.xlsx`
+- `XLM_ROBERTArandompruned_heads_data_25x25_1group.xlsx`
 
 Each file records downstream accuracy under **randomly selected attention head pruning**, used as a baseline for comparison with structured pruning methods.
-
 
 #### `AE_pruning.ipynb` — Attention Entropy Pruning
 
@@ -191,42 +183,31 @@ This notebook implements **Attention Entropy (AE)–based attention head pruning
 
 **Results**
 
-* `pruned_heads_accuracy(BERT)basedonAE.csv`
-* `pruned_heads_accuracy(ALBERT)basedonAE.csv`
-* `pruned_heads_accuracy(ROBERTA)basedonAE.csv`
-* `pruned_heads_accuracy(XLM_ROBERTA)basedonAE.csv`
+- `pruned_heads_accuracy(BERT)basedonAE.csv`
+- `pruned_heads_accuracy(ALBERT)basedonAE.csv`
+- `pruned_heads_accuracy(ROBERTA)basedonAE.csv`
+- `pruned_heads_accuracy(XLM_ROBERTA)basedonAE.csv`
 
 Each file records downstream accuracy as a function of the number of pruned attention heads.
 
-
-
-
 #### `AE_inverse_pruning.ipynb` — Attention Entropy Inverse Pruning
-
 
 This notebook implements **inverse Attention Entropy (AE)–based attention head pruning** for Transformer models, where heads are removed in ascending order of their AE scores. Perform inverse pruning based on Attention Entropy.
 
 **Results**
 
-* `pruned_heads_accuracy(BERT)basedonAEinverse.csv`
-* `pruned_heads_accuracy(ALBERT)basedonAEinverse.csv`
-* `pruned_heads_accuracy(ROBERTA)basedonAEinverse.csv`
-* `pruned_heads_accuracy(XLM_ROBERTA)basedonAEinverse.csv`
+- `pruned_heads_accuracy(BERT)basedonAEinverse.csv`
+- `pruned_heads_accuracy(ALBERT)basedonAEinverse.csv`
+- `pruned_heads_accuracy(ROBERTA)basedonAEinverse.csv`
+- `pruned_heads_accuracy(XLM_ROBERTA)basedonAEinverse.csv`
 
 Each file records downstream accuracy as a function of the number of pruned attention heads.
 
-
-
-
-
 ### Multi-Model Experiments
-
-
 
 #### `four_models.ipynb` — Multi-Model Attention Head Pruning & Attention Entropy Analysis
 
 This notebook conducts **attention head and FFN pruning experiments** across four Transformer models (BERT, ALBERT, RoBERTa, XLM-RoBERTa) and **collects attention entropy (AE) statistics** from their attention matrices.
-
 
 ### Custom and Numerical Stability Experiments
 
@@ -234,77 +215,73 @@ This notebook conducts **attention head and FFN pruning experiments** across fou
 
 This notebook experiments with a **manually implemented BERT architecture** and compares it against the official HuggingFace BERT model. Test whether a custom-written BERT implementation can correctly load pretrained weights and interface with existing pruning utilities.
 
-
-
 #### `solve_underflow.ipynb` — Attention Entropy Numerical Stability Diagnostics
 
 This notebook **diagnoses and fixes numerical underflow and NaN issues** arising during Attention Entropy (AE) computation from Transformer attention matrices. Detect NaN / Inf values during AE computation and generate numerically stable AE matrices for downstream pruning.
 
 **ALBERT**
 
-* `ALBERT0_499AE.pt`
-* `ALBERT500_999AE.pt`
-* `ALBERT1000_1499AE.pt`
-* `ALBERT1500_1999AE.pt`
-* `ALBERT2000_2499AE.pt`
-* `ALBERT2500_2999AE.pt`
-* `ALBERT3000_3499AE.pt`
-* `ALBERT3500_3999AE.pt`
-* `ALBERT4000_4499AE.pt`
-* `ALBERT4500_4999AE.pt`
-* `ALBERT5000_5499AE.pt`
-* `ALBERT5500_5999AE.pt`
-* `ALBERT6000_6499AE.pt`
-* `ALBERT6500_6999AE.pt`
-* `ALBERT7000_7499AE.pt`
-* `ALBERT7500_7999AE.pt`
-* `ALBERT8000_8499AE.pt`
-* `ALBERT8500_8999AE.pt`
-* `ALBERT9000_9499AE.pt`
-* `ALBERT9500_9814AE.pt`
-* `ALBERT_9815AE.pt`
+- `ALBERT0_499AE.pt`
+- `ALBERT500_999AE.pt`
+- `ALBERT1000_1499AE.pt`
+- `ALBERT1500_1999AE.pt`
+- `ALBERT2000_2499AE.pt`
+- `ALBERT2500_2999AE.pt`
+- `ALBERT3000_3499AE.pt`
+- `ALBERT3500_3999AE.pt`
+- `ALBERT4000_4499AE.pt`
+- `ALBERT4500_4999AE.pt`
+- `ALBERT5000_5499AE.pt`
+- `ALBERT5500_5999AE.pt`
+- `ALBERT6000_6499AE.pt`
+- `ALBERT6500_6999AE.pt`
+- `ALBERT7000_7499AE.pt`
+- `ALBERT7500_7999AE.pt`
+- `ALBERT8000_8499AE.pt`
+- `ALBERT8500_8999AE.pt`
+- `ALBERT9000_9499AE.pt`
+- `ALBERT9500_9814AE.pt`
+- `ALBERT_9815AE.pt`
 
 **BERT**
 
-* `BERT_1029AE.pt`
-* `BERT_1300AE.pt`
-* `BERT_2329AE.pt`
+- `BERT_1029AE.pt`
+- `BERT_1300AE.pt`
+- `BERT_2329AE.pt`
 
 **RoBERTa**
 
-* `ROBERTA0_499AE.pt`
-* `ROBERTA500_999AE.pt`
-* `ROBERTA1000_1499AE.pt`
-* `ROBERTA1500_1999AE.pt`
-* `ROBERTA2000_2499AE.pt`
-* `ROBERTA2500_2999AE.pt`
-* `ROBERTA3000_3499AE.pt`
-* `ROBERTA3500_3999AE.pt`
-* `ROBERTA4000_4499AE.pt`
-* `ROBERTA4500_4999AE.pt`
-* `ROBERTA5000_5204AE.pt`
-* `ROBERTA_5205AE.pt`
+- `ROBERTA0_499AE.pt`
+- `ROBERTA500_999AE.pt`
+- `ROBERTA1000_1499AE.pt`
+- `ROBERTA1500_1999AE.pt`
+- `ROBERTA2000_2499AE.pt`
+- `ROBERTA2500_2999AE.pt`
+- `ROBERTA3000_3499AE.pt`
+- `ROBERTA3500_3999AE.pt`
+- `ROBERTA4000_4499AE.pt`
+- `ROBERTA4500_4999AE.pt`
+- `ROBERTA5000_5204AE.pt`
+- `ROBERTA_5205AE.pt`
 
 **XLM-RoBERTa**
 
-* `XLM_ROBERTA0_999AE.pt`
-* `XLM_ROBERTA1000_1999AE.pt`
-* `XLM_ROBERTA2000_2999AE.pt`
-* `XLM_ROBERTA3000_3999AE.pt`
-* `XLM_ROBERTA4000_4999AE.pt`
-* `XLM_ROBERTA5000_5999AE.pt`
-* `XLM_ROBERTA6000_6999AE.pt`
-* `XLM_ROBERTA7000_7722AE.pt`
-* `XLM_ROBERTA7724_7999AE.pt`
-* `XLM_ROBERTA8000_8999AE.pt`
-* `XLM_ROBERTA9000_9999AE.pt`
-* `XLM_ROBERTA_9999AE.pt`
+- `XLM_ROBERTA0_999AE.pt`
+- `XLM_ROBERTA1000_1999AE.pt`
+- `XLM_ROBERTA2000_2999AE.pt`
+- `XLM_ROBERTA3000_3999AE.pt`
+- `XLM_ROBERTA4000_4999AE.pt`
+- `XLM_ROBERTA5000_5999AE.pt`
+- `XLM_ROBERTA6000_6999AE.pt`
+- `XLM_ROBERTA7000_7722AE.pt`
+- `XLM_ROBERTA7724_7999AE.pt`
+- `XLM_ROBERTA8000_8999AE.pt`
+- `XLM_ROBERTA9000_9999AE.pt`
+- `XLM_ROBERTA_9999AE.pt`
 
 Each file stores a **numerically stabilized AE matrix** used for head-ranking and pruning analysis.
 
 > **Note:** `rectified` in the path denotes numerical stabilization of Attention Entropy using ε; one occurrence means ε is applied only to the log term, while two occurrences mean ε is applied to both the probability and log terms.
-
-
 
 ### Result Aggregation and Visualization
 
@@ -314,9 +291,8 @@ This notebook visualizes and compares **attention head pruning trajectories** ac
 
 **Results**
 
-* Multi-panel pruning comparison figures (2×2 layout across models)
-* Accuracy vs. pruned heads curves for each pruning strategy
-
+- Multi-panel pruning comparison figures (2×2 layout across models)
+- Accuracy vs. pruned heads curves for each pruning strategy
 
 #### `Pruning_summary.ipynb` — Final Pruning Configuration Summary
 
@@ -324,9 +300,9 @@ This notebook summarizes the **final pruning configurations** obtained from diff
 
 **Results**
 
-* Figures illustrating final attention head retention patterns
-* Accuracy comparisons before and after pruning
-* Model structure summaries reporting parameter and memory reductions
+- Figures illustrating final attention head retention patterns
+- Accuracy comparisons before and after pruning
+- Model structure summaries reporting parameter and memory reductions
 
 #### `greedy-gnorm-vis.ipynb` — Greedy Gnorm Pruning Visualization
 
@@ -334,13 +310,11 @@ This notebook visualizes and compares **attention head pruning behaviors** under
 
 **Results**
 
-* `PruningResults.png` / `PruningResults.pdf`
-* `RandomPruning.png` / `RandomPruning.pdf`
-* `AlbertPruning.png` / `AlbertPruning.pdf`
-* `allfinalsolutions.png` / `allfinalsolutions.pdf`
-* `gradientpooling.png` / `gradientpooling.pdf`
-
-
+- `PruningResults.png` / `PruningResults.pdf`
+- `RandomPruning.png` / `RandomPruning.pdf`
+- `AlbertPruning.png` / `AlbertPruning.pdf`
+- `allfinalsolutions.png` / `allfinalsolutions.pdf`
+- `gradientpooling.png` / `gradientpooling.pdf`
 
 ## Outputs
 
@@ -353,24 +327,23 @@ The following `.xlsx` files contain results from **random attention head pruning
 
 **Files**
 
-* `ALBERTrandompruned_heads_data_25x13_1group.xlsx`
-* `BERTrandompruned_heads_data_50x25_1group.xlsx`
-* `BERTrandompruned_heads_data_50x25_2group.xlsx`
-* `BERTrandompruned_heads_data_50x25_concated.xlsx`
-* `ROBERTArandompruned_heads_data_25x25_1group.xlsx`
-* `XLM_ROBERTArandompruned_heads_data_25x25_1group.xlsx`
+- `ALBERTrandompruned_heads_data_25x13_1group.xlsx`
+- `BERTrandompruned_heads_data_50x25_1group.xlsx`
+- `BERTrandompruned_heads_data_50x25_2group.xlsx`
+- `BERTrandompruned_heads_data_50x25_concated.xlsx`
+- `ROBERTArandompruned_heads_data_25x25_1group.xlsx`
+- `XLM_ROBERTArandompruned_heads_data_25x25_1group.xlsx`
 
 **Description**
 
-* Each file records accuracy results under randomly selected attention head pruning.
-* Different files correspond to different model architectures and experimental groupings.
-* These results are used as **random pruning baselines** in comparative analyses.
+- Each file records accuracy results under randomly selected attention head pruning.
+- Different files correspond to different model architectures and experimental groupings.
+- These results are used as **random pruning baselines** in comparative analyses.
 
 **Usage**
 
-* Loaded by analysis and visualization notebooks (e.g., `show_pruning_result.ipynb`)
-* Used to compute averaged baseline performance curves
-
+- Loaded by analysis and visualization notebooks (e.g., `show_pruning_result.ipynb`)
+- Used to compute averaged baseline performance curves
 
 ### Accuracy vs. Pruned Heads (CSV Files)
 
@@ -378,77 +351,64 @@ The following `.csv` files record **model accuracy as a function of the number o
 
 Each file corresponds to a specific:
 
-* Model architecture
-* Pruning criterion
-
-
+- Model architecture
+- Pruning criterion
 
 #### ALBERT
 
-* `pruned_heads_accuracy(ALBERT)basedonAE.csv`
-* `pruned_heads_accuracy(ALBERT)basedonAEinverse.csv`
-* `pruned_heads_accuracy(ALBERT)basedonGreedyGnorm.csv`
-* `pruned_heads_accuracy(ALBERT)basedonInverseGreedyGnorm.csv`
-
-
+- `pruned_heads_accuracy(ALBERT)basedonAE.csv`
+- `pruned_heads_accuracy(ALBERT)basedonAEinverse.csv`
+- `pruned_heads_accuracy(ALBERT)basedonGreedyGnorm.csv`
+- `pruned_heads_accuracy(ALBERT)basedonInverseGreedyGnorm.csv`
 
 #### BERT
 
-* `pruned_heads_accuracy(BERT)basedonAE.csv`
-* `pruned_heads_accuracy(BERT)basedonAEinverse.csv`
-* `pruned_heads_accuracy(BERT)basedonGreedyGnorm.csv`
-* `pruned_heads_accuracy(BERT)basedonInverseGreedyGnorm.csv`
-
-
+- `pruned_heads_accuracy(BERT)basedonAE.csv`
+- `pruned_heads_accuracy(BERT)basedonAEinverse.csv`
+- `pruned_heads_accuracy(BERT)basedonGreedyGnorm.csv`
+- `pruned_heads_accuracy(BERT)basedonInverseGreedyGnorm.csv`
 
 #### RoBERTa
 
-* `pruned_heads_accuracy(ROBERTA)basedonAE.csv`
-* `pruned_heads_accuracy(ROBERTA)basedonAEinverse.csv`
-* `pruned_heads_accuracy(ROBERTA)basedonGreedyGnorm.csv`
-* `pruned_heads_accuracy(ROBERTA)basedonInverseGreedyGnorm.csv`
-
+- `pruned_heads_accuracy(ROBERTA)basedonAE.csv`
+- `pruned_heads_accuracy(ROBERTA)basedonAEinverse.csv`
+- `pruned_heads_accuracy(ROBERTA)basedonGreedyGnorm.csv`
+- `pruned_heads_accuracy(ROBERTA)basedonInverseGreedyGnorm.csv`
 
 #### XLM-RoBERTa
 
-* `pruned_heads_accuracy(XLM_ROBERTA)basedonAE.csv`
-* `pruned_heads_accuracy(XLM_ROBERTA)basedonAEinverse.csv`
-* `pruned_heads_accuracy(XLM_ROBERTA)basedonGreedyGnorm.csv`
-* `pruned_heads_accuracy(XLM_ROBERTA)basedonInverseGreedyGnorm.csv`
-
+- `pruned_heads_accuracy(XLM_ROBERTA)basedonAE.csv`
+- `pruned_heads_accuracy(XLM_ROBERTA)basedonAEinverse.csv`
+- `pruned_heads_accuracy(XLM_ROBERTA)basedonGreedyGnorm.csv`
+- `pruned_heads_accuracy(XLM_ROBERTA)basedonInverseGreedyGnorm.csv`
 
 **Description**
 
-* Each CSV file contains:
+- Each CSV file contains:
+  - Number of pruned attention heads
+  - Corresponding model accuracy
 
-  * Number of pruned attention heads
-  * Corresponding model accuracy
-* Files are organized by **pruning strategy**:
-
-  * Activation Energy (AE)
-  * Inverse AE
-  * Greedy Gnorm
-  * Inverse Greedy Gnorm
+- Files are organized by **pruning strategy**:
+  - Activation Energy (AE)
+  - Inverse AE
+  - Greedy Gnorm
+  - Inverse Greedy Gnorm
 
 **Usage**
 
-* Used to generate accuracy–pruning curves
-* Directly consumed by visualization and summary notebooks (e.g., `show_pruning_result.ipynb`, `Pruning_summary.ipynb`)
-
-
+- Used to generate accuracy–pruning curves
+- Directly consumed by visualization and summary notebooks (e.g., `show_pruning_result.ipynb`, `Pruning_summary.ipynb`)
 
 ### Notes on Reproducibility
 
-* The provided result files allow reproducing figures and tables **without rerunning full pruning experiments**.
-* Full experiments can still be reproduced by executing the corresponding notebooks, but this may require substantial computation time, especially on CPU.
+- The provided result files allow reproducing figures and tables **without rerunning full pruning experiments**.
+- Full experiments can still be reproduced by executing the corresponding notebooks, but this may require substantial computation time, especially on CPU.
 
 ---
 
 ## Figures and Visualizations
 
 This repository includes both **illustrative figures** used in the manuscript and **experimental result visualizations** generated from pruning experiments.
-
-
 
 ### Illustrative Figures (Manuscript Diagrams)
 
@@ -457,24 +417,22 @@ These figures were created using **draw.io** and are **not generated by code**.
 
 **Files**
 
-* `gradientpooling.pdf`
-* `gradientpooling.png`
-* `AlbertPruning.pdf`
-* `AlbertPruning.png`
+- `gradientpooling.pdf`
+- `gradientpooling.png`
+- `AlbertPruning.pdf`
+- `AlbertPruning.png`
 
 **Description**
 
-* `gradientpooling.*`:
+- `gradientpooling.*`:
   Illustrates the gradient pooling mechanism used to compute importance scores for attention heads.
-* `AlbertPruning.*`:
+- `AlbertPruning.*`:
   Provides a schematic overview of attention head pruning in ALBERT.
 
 **Notes**
 
-* These figures are **static illustrations** for explanatory purposes.
-* They are not produced by running the notebooks and are included directly for completeness and reference.
-
-
+- These figures are **static illustrations** for explanatory purposes.
+- They are not produced by running the notebooks and are included directly for completeness and reference.
 
 ### Experimental Result Visualizations
 
@@ -482,47 +440,47 @@ The following figures visualize the **empirical results** of attention head prun
 
 **Files**
 
-* `PruningResults.pdf`
-* `PruningResults.png`
-* `RandomPruning.pdf`
-* `RandomPruning.png`
-* `allfinalsolutions.pdf`
-* `allfinalsolutions.png`
+- `PruningResults.pdf`
+- `PruningResults.png`
+- `RandomPruning.pdf`
+- `RandomPruning.png`
+- `allfinalsolutions.pdf`
+- `allfinalsolutions.png`
 
 **Description**
 
-* `PruningResults.*`:
+- `PruningResults.*`:
   Accuracy trends under different pruning strategies.
-* `RandomPruning.*`:
+- `RandomPruning.*`:
   Performance under random attention head pruning (baseline).
-* `allfinalsolutions.*`:
+- `allfinalsolutions.*`:
   Aggregated comparison of pruning strategies across models.
 
 **Usage**
 
-* These figures are generated or reproduced using result files (`.csv`, `.xlsx`) and visualization notebooks such as:
-
-  * `show_pruning_result.ipynb`
-  * `Pruning_summary.ipynb`
+- These figures are generated or reproduced using result files (`.csv`, `.xlsx`) and visualization notebooks such as:
+  - `show_pruning_result.ipynb`
+  - `Pruning_summary.ipynb`
 
 ### Notes on Reproducibility
 
-* Illustrative figures (`gradientpooling.*`, `AlbertPruning.*`) are **manually designed diagrams** and are not reproduced by code.
-* Experimental figures can be regenerated by running the corresponding notebooks, provided that the required result files or full pruning experiments are available.
-
+- Illustrative figures (`gradientpooling.*`, `AlbertPruning.*`) are **manually designed diagrams** and are not reproduced by code.
+- Experimental figures can be regenerated by running the corresponding notebooks, provided that the required result files or full pruning experiments are available.
 
 ## Questions and Feedback
-If you have a technical question about the manuscript, feel free to post it as an [issue](https://github.com/dionysus23334/Greedy-Gnorm/issues).
 
-For more open-ended inquiries, we encourage starting a [discussion](https://github.com/dionysus23334/Greedy-Gnorm/discussions).
+If you have a technical question about the manuscript, feel free to post it as an [issue](https://github.com/Sheridan-Stable/greedy-gnorm/issues).
+
+For more open-ended inquiries, we encourage starting a [discussion](https://github.com/Sheridan-Stable/greedy-gnorm/discussions).
 
 ## Citation
+
 If you find anything useful please cite our work using:
+
 ```
 @article{Guo2026,
   title={Greedy-Gnorm: A Gradient Matrix Norm-Based Alternative to Attention Entropy for Head Pruning},
-  author={Guo, Yuxi and Sheridan, Paul},
-  journal={arXiv preprint arXiv:2602.04491},
+  author={Guo, Yuxi and Ahmed, Zeyad and Sheridan, Paul and Farooque, Aitazaz A.},  journal={arXiv preprint arXiv:2602.04491},
   year={2026}
 }
 ```
