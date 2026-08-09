@@ -11,3 +11,10 @@
   - 3x3=9 `experiments_results/glue/ROBERTA_*/`
   - 3x3=9 `experiments_results/glue/XLM_ROBERTA_*/`
   - `experiments_results/summary_pruning_report.csv`
+
+- We output 4+4 (png + pdf) figures in the `figures` folder:
+  - `bert_pruning_trajectories.*`
+  - `albert_pruning_trajectories.*`
+  - `roberta_pruning_trajectories.*`
+  - `xlm_roberta_pruning_trajectories.*`
+- And a consolidated figure `glue_master_overview.*`
