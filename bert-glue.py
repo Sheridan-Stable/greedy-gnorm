@@ -11,6 +11,13 @@ import torch.nn.functional as F
 import torch.nn.modules.linear
 import argparse
 import random
+import time
+
+def sync_time():
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+    return time.perf_counter()
+
 
 parser = argparse.ArgumentParser(description="BERT GLUE Benchmark with Head Pruning")
 parser.add_argument("seed_pos", type=int, nargs="?", default=None, help="Random seed (positional argument)")
@@ -37,22 +44,22 @@ def sample_datapoints_pair(col1, col2, num_samples=1000, seed=SEED):
 os.makedirs("experiments_results", exist_ok=True)
 
 # Uncomment if running torch > 2.0.1
-# if not getattr(F, "_is_monkeypatched", False):
-#     _orig_linear = F.linear
+if not getattr(F, "_is_monkeypatched", False):
+    _orig_linear = F.linear
 
-#     def replication_safe_linear(input, weight, bias=None):
-#         if weight.size(1) == 0:
-#             out_shape = list(input.shape)
-#             out_shape[-1] = weight.size(0) 
-#             zero_out = torch.zeros(out_shape, device=input.device, dtype=input.dtype)
-#             if bias is not None:
-#                 zero_out += bias
-#             return zero_out
-#         return _orig_linear(input, weight, bias)
+    def replication_safe_linear(input, weight, bias=None):
+        if weight.size(1) == 0:
+            out_shape = list(input.shape)
+            out_shape[-1] = weight.size(0) 
+            zero_out = torch.zeros(out_shape, device=input.device, dtype=input.dtype)
+            if bias is not None:
+                zero_out += bias
+            return zero_out
+        return _orig_linear(input, weight, bias)
 
-#     F.linear = replication_safe_linear
-#     torch.nn.modules.linear.F.linear = replication_safe_linear
-#     F._is_monkeypatched = True
+    F.linear = replication_safe_linear
+    torch.nn.modules.linear.F.linear = replication_safe_linear
+    F._is_monkeypatched = True
 
 def expand_weights_to_768x768(weight_matrix, active_heads_mask):
     head_size = 64
@@ -343,12 +350,15 @@ def get_attr_scores(ds, model, tokenizer, pruned_heads, batch_size=128, device='
 def run_pruning(ds, model, tokenizer, method='gnorm'):
     head_mask = torch.ones(12, 12)
     accs = []
+    step_times = []
     initial_acc = get_acc(ds, model, tokenizer)
     accs.append(initial_acc)
     print(f"[{method}] pruned heads: 0 acc: {initial_acc}")
     
+    total_start = sync_time()
     # 1 head per step for 144 heads (Algorithm 1)
     for step in range(1, 145):
+        step_start = sync_time()
         if method == 'gnorm':
             scores = get_gnorm_scores(ds, model, tokenizer, pruned_heads=head_mask)
         elif method == 'taylor':
@@ -363,13 +373,19 @@ def run_pruning(ds, model, tokenizer, method='gnorm'):
         
         acc = get_acc(ds, model, tokenizer)
         accs.append(acc)
-        print(f"[{method}] pruned heads: {step} acc: {acc}")
+        step_end = sync_time()
+        step_duration = step_end - step_start
+        step_times.append(step_duration)
+        print(f"[{method}] pruned heads: {step} acc: {acc} (step time: {step_duration:.2f}s)")
         
-    return accs
+    total_end = sync_time()
+    total_pruning_time = total_end - total_start
+    print(f"[{method}] Total pruning time: {total_pruning_time:.2f}s")
+    return accs, step_times, total_pruning_time
 
 # Run Greedy Gnorm
 print("Running Gnorm...")
-accs_gnorm = run_pruning(ds, model, tokenizer, method='gnorm')
+accs_gnorm, times_gnorm, total_gnorm = run_pruning(ds, model, tokenizer, method='gnorm')
 
 # Reload model for Taylor
 import gc
@@ -381,7 +397,7 @@ gc.collect()
 
 model = AutoModelForSequenceClassification.from_pretrained("textattack/bert-base-uncased-SST-2", output_attentions=True)
 print("Running Taylor...")
-accs_taylor = run_pruning(ds, model, tokenizer, method='taylor')
+accs_taylor, times_taylor, total_taylor = run_pruning(ds, model, tokenizer, method='taylor')
 
 # Reload model for Attribution
 del model
@@ -392,12 +408,31 @@ gc.collect()
 
 model = AutoModelForSequenceClassification.from_pretrained("textattack/bert-base-uncased-SST-2", output_attentions=True)
 print("Running Attribution...")
-accs_attr = run_pruning(ds, model, tokenizer, method='attr')
+accs_attr, times_attr, total_attr = run_pruning(ds, model, tokenizer, method='attr')
 
 heads_pruned = list(range(145))
 df = pd.DataFrame({'Heads Pruned': heads_pruned, 'Accuracy_Gnorm': accs_gnorm, 'Accuracy_Taylor': accs_taylor, 'Accuracy_Attr': accs_attr})
 df.to_csv(f"experiments_results/glue/BERT_sst2_benchmark_seed_{SEED}.csv", index=False)
 print(df)
+
+steps = list(range(1, 145))
+df_timing = pd.DataFrame({
+    "Step": steps,
+    "Heads Pruned": steps,
+    "Time_Gnorm_sec": times_gnorm,
+    "Time_Taylor_sec": times_taylor,
+    "Time_Attr_sec": times_attr
+})
+df_total = pd.DataFrame({
+    "Step": ["Total"],
+    "Heads Pruned": ["All"],
+    "Time_Gnorm_sec": [total_gnorm],
+    "Time_Taylor_sec": [total_taylor],
+    "Time_Attr_sec": [total_attr]
+})
+df_timing = pd.concat([df_timing, df_total], ignore_index=True)
+df_timing.to_csv(f"experiments_results/glue/BERT_sst2_timing_seed_{SEED}.csv", index=False)
+print(df_timing)
 
 del model, tokenizer
 torch.cuda.empty_cache()
@@ -664,12 +699,15 @@ def get_attr_scores(ds, model, tokenizer, pruned_heads, batch_size=128, device='
 def run_pruning(ds, model, tokenizer, method='gnorm'):
     head_mask = torch.ones(12, 12)
     accs = []
+    step_times = []
     initial_acc = get_acc(ds, model, tokenizer)
     accs.append(initial_acc)
     print(f"[{method}] pruned heads: 0 acc: {initial_acc}")
     
+    total_start = sync_time()
     # 1 head per step for 144 heads (Algorithm 1)
     for step in range(1, 145):
+        step_start = sync_time()
         if method == 'gnorm':
             scores = get_gnorm_scores(ds, model, tokenizer, pruned_heads=head_mask)
         elif method == 'taylor':
@@ -684,13 +722,19 @@ def run_pruning(ds, model, tokenizer, method='gnorm'):
         
         acc = get_acc(ds, model, tokenizer)
         accs.append(acc)
-        print(f"[{method}] pruned heads: {step} acc: {acc}")
+        step_end = sync_time()
+        step_duration = step_end - step_start
+        step_times.append(step_duration)
+        print(f"[{method}] pruned heads: {step} acc: {acc} (step time: {step_duration:.2f}s)")
         
-    return accs
+    total_end = sync_time()
+    total_pruning_time = total_end - total_start
+    print(f"[{method}] Total pruning time: {total_pruning_time:.2f}s")
+    return accs, step_times, total_pruning_time
 
 # Run Greedy Gnorm
 print("Running Gnorm...")
-accs_gnorm = run_pruning(ds, model, tokenizer, method='gnorm')
+accs_gnorm, times_gnorm, total_gnorm = run_pruning(ds, model, tokenizer, method='gnorm')
 
 # Reload model for Taylor
 import gc
@@ -700,7 +744,7 @@ gc.collect()
 
 model = AutoModelForSequenceClassification.from_pretrained("textattack/bert-base-uncased-MNLI", output_attentions=True)
 print("Running Taylor...")
-accs_taylor = run_pruning(ds, model, tokenizer, method='taylor')
+accs_taylor, times_taylor, total_taylor = run_pruning(ds, model, tokenizer, method='taylor')
 
 # Reload model for Attribution
 del model
@@ -711,12 +755,31 @@ gc.collect()
 
 model = AutoModelForSequenceClassification.from_pretrained("textattack/bert-base-uncased-MNLI", output_attentions=True)
 print("Running Attribution...")
-accs_attr = run_pruning(ds, model, tokenizer, method='attr')
+accs_attr, times_attr, total_attr = run_pruning(ds, model, tokenizer, method='attr')
 
 heads_pruned = list(range(145))
 df = pd.DataFrame({'Heads Pruned': heads_pruned, 'Accuracy_Gnorm': accs_gnorm, 'Accuracy_Taylor': accs_taylor, 'Accuracy_Attr': accs_attr})
 df.to_csv(f"experiments_results/glue/BERT_mnli_benchmark_seed_{SEED}.csv", index=False)
 print(df)
+
+steps = list(range(1, 145))
+df_timing = pd.DataFrame({
+    "Step": steps,
+    "Heads Pruned": steps,
+    "Time_Gnorm_sec": times_gnorm,
+    "Time_Taylor_sec": times_taylor,
+    "Time_Attr_sec": times_attr
+})
+df_total = pd.DataFrame({
+    "Step": ["Total"],
+    "Heads Pruned": ["All"],
+    "Time_Gnorm_sec": [total_gnorm],
+    "Time_Taylor_sec": [total_taylor],
+    "Time_Attr_sec": [total_attr]
+})
+df_timing = pd.concat([df_timing, df_total], ignore_index=True)
+df_timing.to_csv(f"experiments_results/glue/BERT_mnli_timing_seed_{SEED}.csv", index=False)
+print(df_timing)
 
 del model, tokenizer
 torch.cuda.empty_cache()
@@ -978,12 +1041,15 @@ def get_attr_scores(ds, model, tokenizer, pruned_heads, batch_size=128, device='
 def run_pruning(ds, model, tokenizer, method='gnorm'):
     head_mask = torch.ones(12, 12)
     accs = []
+    step_times = []
     initial_acc = get_acc(ds, model, tokenizer)
     accs.append(initial_acc)
     print(f"[{method}] pruned heads: 0 acc: {initial_acc}")
     
+    total_start = sync_time()
     # 1 head per step for 144 heads (Algorithm 1)
     for step in range(1, 145):
+        step_start = sync_time()
         if method == 'gnorm':
             scores = get_gnorm_scores(ds, model, tokenizer, pruned_heads=head_mask)
         elif method == 'taylor':
@@ -998,13 +1064,19 @@ def run_pruning(ds, model, tokenizer, method='gnorm'):
         
         acc = get_acc(ds, model, tokenizer)
         accs.append(acc)
-        print(f"[{method}] pruned heads: {step} acc: {acc}")
+        step_end = sync_time()
+        step_duration = step_end - step_start
+        step_times.append(step_duration)
+        print(f"[{method}] pruned heads: {step} acc: {acc} (step time: {step_duration:.2f}s)")
         
-    return accs
+    total_end = sync_time()
+    total_pruning_time = total_end - total_start
+    print(f"[{method}] Total pruning time: {total_pruning_time:.2f}s")
+    return accs, step_times, total_pruning_time
 
 # Run Greedy Gnorm
 print("Running Gnorm...")
-accs_gnorm = run_pruning(ds, model, tokenizer, method='gnorm')
+accs_gnorm, times_gnorm, total_gnorm = run_pruning(ds, model, tokenizer, method='gnorm')
 
 # Reload model for Taylor
 import gc
@@ -1014,7 +1086,7 @@ gc.collect()
 
 model = AutoModelForSequenceClassification.from_pretrained("textattack/bert-base-uncased-QNLI", output_attentions=True)
 print("Running Taylor...")
-accs_taylor = run_pruning(ds, model, tokenizer, method='taylor')
+accs_taylor, times_taylor, total_taylor = run_pruning(ds, model, tokenizer, method='taylor')
 
 # Reload model for Attribution
 del model
@@ -1025,12 +1097,31 @@ gc.collect()
 
 model = AutoModelForSequenceClassification.from_pretrained("textattack/bert-base-uncased-QNLI", output_attentions=True)
 print("Running Attribution...")
-accs_attr = run_pruning(ds, model, tokenizer, method='attr')
+accs_attr, times_attr, total_attr = run_pruning(ds, model, tokenizer, method='attr')
 
 heads_pruned = list(range(145))
 df = pd.DataFrame({'Heads Pruned': heads_pruned, 'Accuracy_Gnorm': accs_gnorm, 'Accuracy_Taylor': accs_taylor, 'Accuracy_Attr': accs_attr})
 df.to_csv(f"experiments_results/glue/BERT_qnli_benchmark_seed_{SEED}.csv", index=False)
 print(df)
+
+steps = list(range(1, 145))
+df_timing = pd.DataFrame({
+    "Step": steps,
+    "Heads Pruned": steps,
+    "Time_Gnorm_sec": times_gnorm,
+    "Time_Taylor_sec": times_taylor,
+    "Time_Attr_sec": times_attr
+})
+df_total = pd.DataFrame({
+    "Step": ["Total"],
+    "Heads Pruned": ["All"],
+    "Time_Gnorm_sec": [total_gnorm],
+    "Time_Taylor_sec": [total_taylor],
+    "Time_Attr_sec": [total_attr]
+})
+df_timing = pd.concat([df_timing, df_total], ignore_index=True)
+df_timing.to_csv(f"experiments_results/glue/BERT_qnli_timing_seed_{SEED}.csv", index=False)
+print(df_timing)
 
 del model, tokenizer
 torch.cuda.empty_cache()
