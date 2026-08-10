@@ -43,23 +43,28 @@ def sample_datapoints_pair(col1, col2, num_samples=1000, seed=SEED):
 
 os.makedirs("experiments_results", exist_ok=True)
 
-# Uncomment if running torch > 2.0.1
-if not getattr(F, "_is_monkeypatched", False):
-    _orig_linear = F.linear
+# Apply torch==2.0.1 monkeypatch for newer versions
+def _parse_torch_version(v_str):
+    clean_v = v_str.split('+')[0].split('a')[0].split('b')[0].split('rc')[0]
+    return tuple(int(x) for x in clean_v.split('.')[:3])
 
-    def replication_safe_linear(input, weight, bias=None):
-        if weight.size(1) == 0:
-            out_shape = list(input.shape)
-            out_shape[-1] = weight.size(0) 
-            zero_out = torch.zeros(out_shape, device=input.device, dtype=input.dtype)
-            if bias is not None:
-                zero_out += bias
-            return zero_out
-        return _orig_linear(input, weight, bias)
+if _parse_torch_version(torch.__version__) > (2, 0, 1):
+    if not getattr(F, "_is_monkeypatched", False):
+        _orig_linear = F.linear
 
-    F.linear = replication_safe_linear
-    torch.nn.modules.linear.F.linear = replication_safe_linear
-    F._is_monkeypatched = True
+        def replication_safe_linear(input, weight, bias=None):
+            if weight.size(1) == 0:
+                out_shape = list(input.shape)
+                out_shape[-1] = weight.size(0) 
+                zero_out = torch.zeros(out_shape, device=input.device, dtype=input.dtype)
+                if bias is not None:
+                    zero_out += bias
+                return zero_out
+            return _orig_linear(input, weight, bias)
+
+        F.linear = replication_safe_linear
+        torch.nn.modules.linear.F.linear = replication_safe_linear
+        F._is_monkeypatched = True
 
 def expand_weights_to_768x768(tensor, pruned_heads):
     tensors_to_concat = []
