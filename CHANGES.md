@@ -19,6 +19,16 @@
   - `xlm_roberta_pruning_trajectories.*`
 - And a consolidated figure `glue_master_overview.*`
 
+- `ggnorm-variants.py`: for evaluating Greedy Gnorm product, sum, and max variants on BERT (SST-2 and MNLI).
+- `plot_ggnorm_variants.py`: for plotting Greedy Gnorm variant trajectories on BERT (SST-2, MNLI, and combined overview plot with flattened bottom legend).
+- Gnorm variants results:
+  - `experiments_results/glue/BERT_sst2_ggnorm_variants_seed_*.csv`
+  - `experiments_results/glue/BERT_mnli_ggnorm_variants_seed_*.csv`
+- We output 3+3 (png + pdf) variant figures in the `figures` folder:
+  - `bert_sst2_ggnorm_variants.*`
+  - `bert_mnli_ggnorm_variants.*`
+  - `bert_ggnorm_variants_overview.*`
+
 ## Updated
 
 - `*-glue.py` now logs time for pruning; output at `experiments_results/glue/*_*_timing_*.csv`
