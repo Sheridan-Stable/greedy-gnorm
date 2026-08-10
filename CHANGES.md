@@ -18,3 +18,7 @@
   - `roberta_pruning_trajectories.*`
   - `xlm_roberta_pruning_trajectories.*`
 - And a consolidated figure `glue_master_overview.*`
+
+## Updated
+
+- `*-glue.py` now logs time for pruning; output at `experiments_results/glue/*_*_timing_*.csv`
