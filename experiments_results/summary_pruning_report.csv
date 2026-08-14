@@ -1,4 +1,4 @@
-Architecture,GLUE Task,Prune Ratio,Actual Heads Pruned,Num Runs/Seeds,Greedy Gnorm Mean,Greedy Gnorm SD,Greedy Gnorm (Mean +/- SD),Taylor Importance Mean,Taylor Importance SD,Taylor Importance (Mean +/- SD),Self-Attention Attribution Mean,Self-Attention Attribution SD,Self-Attention Attribution (Mean +/- SD)
+Architecture,GLUE Task,Prune Ratio,Actual Heads Pruned,Num Runs/Seeds,Greedy-Gnorm Mean,Greedy-Gnorm SD,Greedy-Gnorm (Mean +/- SD),Taylor Importance Mean,Taylor Importance SD,Taylor Importance (Mean +/- SD),Self-Attention Attribution Mean,Self-Attention Attribution SD,Self-Attention Attribution (Mean +/- SD)
 BERT,SST2,0% (Baseline),0,4,0.9243,0.0,0.9243 ± 0.0000,0.9243,0.0,0.9243 ± 0.0000,0.9243,0.0,0.9243 ± 0.0000
 BERT,SST2,25% Pruned,36,4,0.9214,0.0007,0.9214 ± 0.0007,0.9194,0.0014,0.9194 ± 0.0014,0.922,0.0026,0.9220 ± 0.0026
 BERT,SST2,50% Pruned,72,4,0.9014,0.0039,0.9014 ± 0.0039,0.8999,0.0079,0.8999 ± 0.0079,0.9123,0.0044,0.9123 ± 0.0044

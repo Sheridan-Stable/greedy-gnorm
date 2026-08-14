@@ -58,7 +58,7 @@ MODELS_META = {
 
 METHODS_META = {
     "Accuracy_Gnorm": {
-        "label": "Greedy Gnorm",
+        "label": "Greedy-Gnorm",
         "style": "-",
         "color": "#1f77b4"
     },
