@@ -342,12 +342,21 @@ def generate_summary_report(output_dir: str):
 
     for model_name, meta in MODELS_META.items():
         max_heads = meta["max_heads"]
-        target_checkpoints = {
-            "0% (Baseline)": 0,
-            "25% Pruned": int(max_heads * 0.25),
-            "50% Pruned": int(max_heads * 0.50),
-            "75% Pruned": int(max_heads * 0.75)
-        }
+        if model_name == "ALBERT":
+            # ALBERT has 12 tied heads
+            target_checkpoints = {
+                "0% (Baseline)": 0,
+                "25% Pruned": 3 * 12,
+                "50% Pruned": 6 * 12,
+                "75% Pruned": 9 * 12
+            }
+        else:
+            target_checkpoints = {
+                "0% (Baseline)": 0,
+                "25% Pruned": int(max_heads * 0.25),
+                "50% Pruned": int(max_heads * 0.50),
+                "75% Pruned": int(max_heads * 0.75)
+            }
 
         for task in meta["tasks"]:
             stats_df = load_all_runs(model_name, task)
