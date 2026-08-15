@@ -15,6 +15,9 @@ ArXiv preprint link: https://arxiv.org/abs/2602.04491
 &nbsp;&nbsp;↳ [Gradient Analysis and Diagnostics](#gradient-analysis-and-diagnostics)  
 &nbsp;&nbsp;↳ [Greedy Gnorm Based Pruning](#greedy-gnorm-based-pruning)  
 &nbsp;&nbsp;↳ [Baseline and Comparative Pruning Methods](#baseline-and-comparative-pruning-methods)  
+&nbsp;&nbsp;↳ [GLUE Benchmark Experiments & Gradient Baselines](#glue-benchmark-experiments--gradient-baselines)  
+&nbsp;&nbsp;↳ [Greedy-Gnorm Score Aggregation Variants](#greedy-gnorm-score-aggregation-variants)  
+&nbsp;&nbsp;↳ [Pruning Execution Time and Wall-Clock Benchmarks](#pruning-execution-time-and-wall-clock-benchmarks)  
 &nbsp;&nbsp;↳ [Multi-Model Experiments](#multi-model-experiments)  
 &nbsp;&nbsp;↳ [Custom and Numerical Stability Experiments](#custom-and-numerical-stability-experiments)  
 &nbsp;&nbsp;↳ [Result Aggregation and Visualization](#result-aggregation-and-visualization)
@@ -22,11 +25,16 @@ ArXiv preprint link: https://arxiv.org/abs/2602.04491
 [Outputs](#outputs)  
 &nbsp;&nbsp;↳ [Random Pruning Results](#random-pruning-results-excel-files)  
 &nbsp;&nbsp;↳ [Accuracy vs. Pruned Heads](#accuracy-vs-pruned-heads-csv-files)  
+&nbsp;&nbsp;↳ [GLUE Benchmark Outputs & Baseline Comparisons](#glue-benchmark-outputs--baseline-comparisons)
+&nbsp;&nbsp;↳ [Score Aggregation Variant Outputs](#score-aggregation-variant-outputs)
+&nbsp;&nbsp;↳ [Execution Timing Logs](#execution-timing-logs)
 &nbsp;&nbsp;↳ [Notes on Reproducibility](#notes-on-reproducibility)
 
 [Figures and Visualizations](#figures-and-visualizations)  
 &nbsp;&nbsp;↳ [Illustrative Figures](#illustrative-figures-manuscript-diagrams)  
 &nbsp;&nbsp;↳ [Experimental Result Visualizations](#experimental-result-visualizations)
+&nbsp;&nbsp;↳ [GLUE Master Overview & Architecture Trajectories](#glue-master-overview--architecture-trajectories)  
+&nbsp;&nbsp;↳ [Score Aggregation Variant Visualizations](#score-aggregation-variant-visualizations)
 
 [Questions and Feedback](#questions-and-feedback)
 
@@ -39,13 +47,11 @@ ArXiv preprint link: https://arxiv.org/abs/2602.04491
 Clone this repository and change into the project directory:
 
 ```bash
-
 git clone https://github.com/Sheridan-Stable/greedy-gnorm.git
 cd greedy-gnorm
-
 ```
 
-All experiments are implemented in Jupyter notebooks (`.ipynb`).
+Experiments are implemented as both interactive **Jupyter notebooks (`.ipynb`)** and automated **Python scripts (`.py`)**.
 
 We recommend using **Python 3.9+**.
 
@@ -62,7 +68,7 @@ This implementation supports both CPU and GPU execution.
 
 #### GPU Execution (Recommended)
 
-If a CUDA-enabled GPU is available, we strongly recommend installing the GPU version of PyTorch and running the notebooks on GPU.
+If a CUDA-enabled GPU is available, we strongly recommend installing the GPU version of PyTorch and running the scripts and notebooks on GPU.
 
 GPU execution significantly reduces runtime, as the pruning procedure involves repeated forward and backward passes through the model.
 
@@ -77,10 +83,10 @@ Alternatively, core dependencies are listed in `requirements.txt`.
 
 ## Reproducing Plots and Tables
 
-All experiments in this repository are implemented as **Jupyter notebooks (`.ipynb`)**.
-Each notebook can be executed independently unless otherwise specified.
+Experiments in this repository are available as interactive **Jupyter notebooks (`.ipynb`)** as well as standalone **Python scripts (`.py`)** for multi-seed GLUE benchmarking, timing profiling, and variant analysis.
+Each notebook and script can be executed independently unless otherwise specified.
 
-Unless noted otherwise, notebooks are expected to be run from the repository root directory.
+Unless noted otherwise, all scripts and notebooks are expected to be run from the repository root directory.
 
 ### Data Preparation
 
@@ -104,7 +110,7 @@ This notebook provides an **early exploratory implementation** of greedy attenti
 
 This notebook implements a **greedy attention head pruning algorithm based on gradient norm statistics**, where attention heads are iteratively removed according to their estimated contribution to the model output.
 
-**Purpose**
+**Purpose**  
 Perform **greedy attention head pruning** using a **QKV gradient-norm–based importance score**, evaluated after each pruning step.
 
 **Method Overview**
@@ -202,6 +208,94 @@ This notebook implements **inverse Attention Entropy (AE)–based attention head
 - `pruned_heads_accuracy(XLM_ROBERTA)basedonAEinverse.csv`
 
 Each file records downstream accuracy as a function of the number of pruned attention heads.
+
+### GLUE Benchmark Experiments & Gradient Baselines
+
+To rigorously evaluate Greedy-Gnorm against competitive gradient-informed pruning methods across standard benchmarks, we provide end-to-end Python evaluation scripts across four model families over multiple random seeds (e.g., seeds `111`, `222`, `333`, `555`).
+
+#### Evaluated Methods
+
+1. **Greedy-Gnorm (Proposed)**
+2. **Taylor-based Importance**
+3. **Self-Attention Attribution**
+
+#### Benchmark Scripts
+
+- `bert-glue.py`: Evaluates BERT on GLUE tasks (SST-2, MNLI, QNLI).
+- `roberta-glue.py`: Evaluates RoBERTa on GLUE tasks (SST-2, MNLI, QNLI).
+- `xlmroberta-glue.py`: Evaluates XLM-RoBERTa on GLUE tasks (SST-2, MNLI, QQP).
+- `albert-glue.py`: Evaluates ALBERT on GLUE tasks (SST-2, MNLI, QNLI).
+
+**Usage:**
+
+```bash
+python bert-glue.py
+python roberta-glue.py
+python xlmroberta-glue.py
+python albert-glue.py
+```
+
+You may add `--seed [SEED_VALUE]` to run the experiment with a specific seed.
+
+Outputs are saved in `experiments_results/glue/` containing per-step accuracy and wall-clock execution timing.
+
+#### `plot_glue.py` — GLUE Benchmark Plotting & Report Aggregation
+
+Aggregates all multi-seed benchmark CSV files, computes mean and standard deviation across trials, and generates trajectory plots and summary tables.
+
+**Usage:**
+
+```bash
+python plot_glue.py
+```
+
+**Generated Outputs:**
+
+- `figures/bert_pruning_trajectories.pdf` / `.png`
+- `figures/roberta_pruning_trajectories.pdf` / `.png`
+- `figures/xlm_roberta_pruning_trajectories.pdf` / `.png`
+- `figures/albert_pruning_trajectories.pdf` / `.png`
+- `figures/glue_master_overview.pdf` / `.png`
+- `experiments_results/summary_pruning_report.csv`
+
+### Greedy-Gnorm Score Aggregation Variants
+
+To evaluate whether Greedy-Gnorm is sensitive to how the Query, Key, and Value gradient matrix norms are combined, we investigate three aggregation functions:
+
+1. **Product Aggregation**
+2. **Sum Aggregation**
+3. **Max Aggregation**
+
+#### `ggnorm-variants.py` — Variant Benchmark Script
+
+Runs iterative pruning on BERT across SST-2 and MNLI comparing Product, Sum, and Max variants of Greedy-Gnorm.
+
+```bash
+python ggnorm-variants.py --seed [SEED_VALUE]
+```
+
+**Results:**
+
+- `experiments_results/glue/BERT_sst2_ggnorm_variants_seed_[SEED_VALUE].csv`
+- `experiments_results/glue/BERT_mnli_ggnorm_variants_seed_[SEED_VALUE].csv`
+
+#### `plot_ggnorm_variants.py` — Variant Plotting Script
+
+Generates comparison plots for the aggregation variants:
+
+```bash
+python plot_ggnorm_variants.py
+```
+
+**Generated Outputs:**
+
+- `figures/bert_sst2_ggnorm_variants.pdf` / `.png`
+- `figures/bert_mnli_ggnorm_variants.pdf` / `.png`
+- `figures/bert_ggnorm_variants_overview.pdf` / `.png`
+
+### Pruning Execution Time and Wall-Clock Benchmarks
+
+- Per-step timing is automatically logged during execution of `*-glue.py` and saved to `experiments_results/glue/*_*_timing_*.csv`.
 
 ### Multi-Model Experiments
 
@@ -316,6 +410,8 @@ This notebook visualizes and compares **attention head pruning behaviors** under
 - `allfinalsolutions.png` / `allfinalsolutions.pdf`
 - `gradientpooling.png` / `gradientpooling.pdf`
 
+---
+
 ## Outputs
 
 This repository includes precomputed experimental results corresponding to the pruning experiments reported in the manuscript.
@@ -389,7 +485,7 @@ Each file corresponds to a specific:
   - Corresponding model accuracy
 
 - Files are organized by **pruning strategy**:
-  - Activation Energy (AE)
+  - Attention Entropy (AE)
   - Inverse AE
   - Greedy Gnorm
   - Inverse Greedy Gnorm
@@ -399,10 +495,40 @@ Each file corresponds to a specific:
 - Used to generate accuracy–pruning curves
 - Directly consumed by visualization and summary notebooks (e.g., `show_pruning_result.ipynb`, `Pruning_summary.ipynb`)
 
+### GLUE Benchmark Outputs & Baseline Comparisons
+
+Located under `experiments_results/glue/`, these CSV files record per-step accuracy across multiple independent trials (seeds `111`, `222`, `333`, `555`) comparing **Greedy-Gnorm**, **Taylor Importance**, and **Self-Attention Attribution**:
+
+- `BERT_{sst2,mnli,qnli}_benchmark_seed_{111,222,333,555}.csv`
+- `ROBERTA_{sst2,mnli,qnli}_benchmark_seed_{111,222,333,555}.csv`
+- `XLM_ROBERTA_{sst2,mnli,qqp}_benchmark_seed_{111,222,333,555}.csv`
+- `ALBERT_{sst2,mnli,qnli}_benchmark_seed_{111,222,333,555}.csv`
+- `experiments_results/summary_pruning_report.csv`: Aggregated GLUE table containing mean and standard deviation metrics across prune ratios (0%, 25%, 50%, 75%).
+
+### Score Aggregation Variant Outputs
+
+Located under `experiments_results/glue/`:
+
+- `BERT_sst2_ggnorm_variants_seed_999.csv`
+- `BERT_mnli_ggnorm_variants_seed_999.csv`
+
+Each file records per-step accuracy for Product, Sum, and Max aggregation formulations of Greedy-Gnorm.
+
+### Execution Timing Logs
+
+Located under `experiments_results/glue/`:
+
+- `BERT_{sst2,mnli,qnli}_timing_seed_555.csv`
+- `ROBERTA_{sst2,mnli,qnli}_timing_seed_555.csv`
+- `XLM_ROBERTA_{sst2,mnli,qqp}_timing_seed_555.csv`
+- `ALBERT_{sst2,mnli,qnli}_timing_seed_555.csv`
+
+Records per-step wall-clock execution time (in seconds) for each method on an NVIDIA H100 GPU.
+
 ### Notes on Reproducibility
 
 - The provided result files allow reproducing figures and tables **without rerunning full pruning experiments**.
-- Full experiments can still be reproduced by executing the corresponding notebooks, but this may require substantial computation time, especially on CPU.
+- Full experiments can still be reproduced by executing the corresponding scripts or notebooks, but this may require substantial computation time, especially on CPU.
 
 ---
 
@@ -417,17 +543,13 @@ These figures were created using **draw.io** and are **not generated by code**.
 
 **Files**
 
-- `gradientpooling.pdf`
-- `gradientpooling.png`
-- `AlbertPruning.pdf`
-- `AlbertPruning.png`
+- `figures/gradientpooling.pdf` / `figures/gradientpooling.png`
+- `figures/AlbertPruning.pdf` / `figures/AlbertPruning.png`
 
 **Description**
 
-- `gradientpooling.*`:
-  Illustrates the gradient pooling mechanism used to compute importance scores for attention heads.
-- `AlbertPruning.*`:
-  Provides a schematic overview of attention head pruning in ALBERT.
+- `gradientpooling.*`: Illustrates the gradient pooling mechanism used to compute importance scores for attention heads.
+- `AlbertPruning.*`: Provides a schematic overview of attention head pruning in ALBERT.
 
 **Notes**
 
@@ -440,21 +562,15 @@ The following figures visualize the **empirical results** of attention head prun
 
 **Files**
 
-- `PruningResults.pdf`
-- `PruningResults.png`
-- `RandomPruning.pdf`
-- `RandomPruning.png`
-- `allfinalsolutions.pdf`
-- `allfinalsolutions.png`
+- `figures/PruningResults.pdf` / `figures/PruningResults.png`
+- `figures/RandomPruning.pdf` / `figures/RandomPruning.png`
+- `figures/allfinalsolutions.pdf` / `figures/allfinalsolutions.png`
 
 **Description**
 
-- `PruningResults.*`:
-  Accuracy trends under different pruning strategies.
-- `RandomPruning.*`:
-  Performance under random attention head pruning (baseline).
-- `allfinalsolutions.*`:
-  Aggregated comparison of pruning strategies across models.
+- `PruningResults.*`: Accuracy trends under different pruning strategies.
+- `RandomPruning.*`: Performance under random attention head pruning (baseline).
+- `allfinalsolutions.*`: Aggregated comparison of pruning strategies across models.
 
 **Usage**
 
@@ -462,10 +578,29 @@ The following figures visualize the **empirical results** of attention head prun
   - `show_pruning_result.ipynb`
   - `Pruning_summary.ipynb`
 
-### Notes on Reproducibility
+### GLUE Master Overview & Architecture Trajectories
 
-- Illustrative figures (`gradientpooling.*`, `AlbertPruning.*`) are **manually designed diagrams** and are not reproduced by code.
-- Experimental figures can be regenerated by running the corresponding notebooks, provided that the required result files or full pruning experiments are available.
+Generated by `python plot_glue.py`:
+
+**Files**
+
+- `figures/glue_master_overview.pdf` / `figures/glue_master_overview.png`
+- `figures/bert_pruning_trajectories.pdf` / `figures/bert_pruning_trajectories.png`
+- `figures/roberta_pruning_trajectories.pdf` / `figures/roberta_pruning_trajectories.png`
+- `figures/xlm_roberta_pruning_trajectories.pdf` / `figures/xlm_roberta_pruning_trajectories.png`
+- `figures/albert_pruning_trajectories.pdf` / `figures/albert_pruning_trajectories.png`
+
+### Score Aggregation Variant Visualizations
+
+Generated by `python plot_ggnorm_variants.py`:
+
+**Files**
+
+- `figures/bert_ggnorm_variants_overview.pdf` / `figures/bert_ggnorm_variants_overview.png`
+- `figures/bert_sst2_ggnorm_variants.pdf` / `figures/bert_sst2_ggnorm_variants.png`
+- `figures/bert_mnli_ggnorm_variants.pdf` / `figures/bert_mnli_ggnorm_variants.png`
+
+---
 
 ## Questions and Feedback
 
@@ -477,10 +612,11 @@ For more open-ended inquiries, we encourage starting a [discussion](https://gith
 
 If you find anything useful please cite our work using:
 
-```
+```bibtex
 @article{Guo2026,
   title={Greedy-Gnorm: A Gradient Matrix Norm-Based Alternative to Attention Entropy for Head Pruning},
-  author={Guo, Yuxi and Ahmed, Zeyad and Sheridan, Paul and Farooque, Aitazaz A.},  journal={arXiv preprint arXiv:2602.04491},
+  author={Guo, Yuxi and Ahmed, Zeyad and Sheridan, Paul and Farooque, Aitazaz A.},
+  journal={arXiv preprint arXiv:2602.04491},
   year={2026}
 }
 ```
