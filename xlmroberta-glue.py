@@ -244,7 +244,7 @@ def get_taylor_scores(ds, model, tokenizer, pruned_heads, batch_size=128, device
                 continue
                 
             inner = A * A_grad
-            batch_scores = inner.sum(dim=(0, 2, 3)).detach()
+            batch_scores = torch.abs(inner.sum(dim=(2, 3))).sum(dim=0).detach()
             
             exp_scores = torch.zeros(12, device=device)
             active_idx = 0
@@ -263,7 +263,6 @@ def get_taylor_scores(ds, model, tokenizer, pruned_heads, batch_size=128, device
         torch.cuda.empty_cache()
         
     scores = scores.cpu() / num_samples
-    scores = torch.abs(scores)
     
     for layer in range(12):
         pl = pruned_heads[layer]
@@ -591,7 +590,7 @@ def get_taylor_scores(ds, model, tokenizer, pruned_heads, batch_size=128, device
                 continue
                 
             inner = A * A_grad
-            batch_scores = inner.sum(dim=(0, 2, 3)).detach()
+            batch_scores = torch.abs(inner.sum(dim=(2, 3))).sum(dim=0).detach()
             
             exp_scores = torch.zeros(12, device=device)
             active_idx = 0
@@ -610,7 +609,6 @@ def get_taylor_scores(ds, model, tokenizer, pruned_heads, batch_size=128, device
         torch.cuda.empty_cache()
         
     scores = scores.cpu() / num_samples
-    scores = torch.abs(scores)
     
     for layer in range(12):
         pl = pruned_heads[layer]
@@ -936,7 +934,7 @@ def get_taylor_scores(ds, model, tokenizer, pruned_heads, batch_size=128, device
                 continue
                 
             inner = A * A_grad
-            batch_scores = inner.sum(dim=(0, 2, 3)).detach()
+            batch_scores = torch.abs(inner.sum(dim=(2, 3))).sum(dim=0).detach()
             
             exp_scores = torch.zeros(12, device=device)
             active_idx = 0
@@ -955,7 +953,6 @@ def get_taylor_scores(ds, model, tokenizer, pruned_heads, batch_size=128, device
         torch.cuda.empty_cache()
         
     scores = scores.cpu() / num_samples
-    scores = torch.abs(scores)
     
     for layer in range(12):
         pl = pruned_heads[layer]
