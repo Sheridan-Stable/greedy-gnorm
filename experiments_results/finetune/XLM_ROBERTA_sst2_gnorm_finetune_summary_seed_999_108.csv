@@ -1,0 +1,2 @@
+Seed,Prune_Steps,Finetune_Epochs,LR,Acc_Before_FT,Acc_After_FT,Recovery_pp
+999,108,3,2e-05,0.8245412844036697,0.9071100917431193,0.0825688073394496
