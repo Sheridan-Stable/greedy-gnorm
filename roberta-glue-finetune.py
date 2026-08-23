@@ -216,19 +216,11 @@ def get_gnorm_scores(ds, model, tokenizer, pruned_heads, batch_size=128, device=
 def finetune(ds, model, tokenizer, epochs=3, lr=2e-5, batch_size=32, device='cuda'):
     """Fine-tune the pruned model on the training split for a fixed number of epochs."""
     model.to(device)
-    model.train()
 
     all_sentences = ds['train']['sentence']
-    all_labels = ds['train']['label']
-
-    # Shuffle training data using SEED
-    rng = random.Random(SEED)
-    indices = list(range(len(all_sentences)))
-    rng.shuffle(indices)
-    all_sentences = [all_sentences[i] for i in indices]
-    all_labels = [all_labels[i] for i in indices]
-
+    all_labels    = ds['train']['label']
     total_steps = (len(all_sentences) // batch_size + 1) * epochs
+
     optimizer = AdamW(model.parameters(), lr=lr, weight_decay=0.01)
     scheduler = get_linear_schedule_with_warmup(
         optimizer,
@@ -236,12 +228,22 @@ def finetune(ds, model, tokenizer, epochs=3, lr=2e-5, batch_size=32, device='cud
         num_training_steps=total_steps
     )
 
+    rng = random.Random(SEED)
+
     for epoch in range(epochs):
+        model.train()
+
+        # Shuffle training data at the start of every epoch
+        indices = list(range(len(all_sentences)))
+        rng.shuffle(indices)
+        epoch_sentences = [all_sentences[i] for i in indices]
+        epoch_labels    = [all_labels[i]    for i in indices]
+
         total_loss = 0
         num_batches = 0
-        for i in range(0, len(all_sentences), batch_size):
-            b_sentences = all_sentences[i:i+batch_size]
-            b_labels = torch.tensor(all_labels[i:i+batch_size]).to(device)
+        for i in range(0, len(epoch_sentences), batch_size):
+            b_sentences = epoch_sentences[i:i+batch_size]
+            b_labels    = torch.tensor(epoch_labels[i:i+batch_size]).to(device)
 
             inputs = tokenizer(b_sentences, return_tensors='pt', padding=True, truncation=True)
             inputs = {k: v.to(device) for k, v in inputs.items()}
@@ -260,7 +262,7 @@ def finetune(ds, model, tokenizer, epochs=3, lr=2e-5, batch_size=32, device='cud
             num_batches += 1
 
         avg_loss = total_loss / num_batches
-        val_acc = get_acc(ds, model, tokenizer, device=device)
+        val_acc  = get_acc(ds, model, tokenizer, device=device)
         print(f"  [finetune] Epoch {epoch+1}/{epochs} - avg loss: {avg_loss:.4f} | val acc: {val_acc*100:.2f}%")
 
 def run_pruning_then_finetune(ds, model, tokenizer, prune_steps=108, finetune_epochs=3, lr=2e-5, finetune_batch_size=32):
