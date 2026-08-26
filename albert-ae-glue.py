@@ -88,6 +88,15 @@ def get_new_head_mask_basedonAE_albert(head_mask_previous, AE_vector):
     return head_mask
 
 
+def get_new_head_mask_basedonAE_inverse_albert(head_mask_previous, AE_vector):
+    head_mask = head_mask_previous.clone()
+    selected_matrix = AE_vector.to(head_mask.device).clone()
+    selected_matrix[head_mask == 0] = float('inf')
+    argmin_idx = torch.argmin(selected_matrix).item() % 12
+    head_mask[0][argmin_idx] = 0
+    return head_mask
+
+
 # =========================================================================
 # Attention Entropy (AE) Score Calculation (ALBERT Parameter Sharing)
 # =========================================================================
@@ -198,7 +207,8 @@ def evaluate_accuracy(ds, model, tokenizer, val_split="validation", is_pair=Fals
 def run_ae_pruning_experiment(task_name, checkpoint, dataset_name, dataset_subset,
                               val_split, is_pair, key1_name, key2_name, label_name, label_map=None,
                               device="cuda", batch_size=64, num_samples=1000, seed=555,
-                              run_random=True, output_dir="experiments_results/glue/AE"):
+                              run_ae=True, run_random=True, run_inverse=True,
+                              output_dir="experiments_results/glue/AE"):
     model_name = "ALBERT"
     total_steps = 12
 
@@ -207,7 +217,11 @@ def run_ae_pruning_experiment(task_name, checkpoint, dataset_name, dataset_subse
     print("\n" + "=" * 60)
     print(f"STARTING STATIC AE EXPERIMENT: ALBERT on {task_name.upper()}")
     print(f"Checkpoint: {checkpoint}")
-    print(f"Pruning: Static Attention Entropy (AE) + Random | Total Steps: {total_steps}")
+    methods_str = []
+    if run_ae: methods_str.append("Static AE")
+    if run_random: methods_str.append("Random")
+    if run_inverse: methods_str.append("Inverse AE")
+    print(f"Active Pruning Methods: {', '.join(methods_str)} | Total Steps: {total_steps}")
     if label_map is not None:
         print(f"Using Task Label Map: {label_map}")
     print("=" * 60 + "\n")
@@ -311,35 +325,94 @@ def run_ae_pruning_experiment(task_name, checkpoint, dataset_name, dataset_subse
         clear_memory()
         return accs, step_times, total_dur
 
+    # Inverse AE pruning execution helper
+    def execute_inverse_ae_pruning_run():
+        print("\n--- Running Static Pruning: INVERSE ATTENTION ENTROPY (AE Inverse) ---")
+        model_run = AutoModelForSequenceClassification.from_pretrained(checkpoint, output_attentions=True)
+        head_mask = torch.ones(1, 12)
+        pruner = TransformerPruner(model_run)
+
+        accs = [initial_acc]
+        step_times = []
+        total_start = sync_time()
+
+        for step in range(1, total_steps + 1):
+            s_start = sync_time()
+
+            head_mask = get_new_head_mask_basedonAE_inverse_albert(head_mask, raw_ae_matrix)
+            pruner.prune(head_mask=head_mask, save_model=False)
+
+            acc = evaluate_accuracy(ds, model_run, tokenizer, val_split=val_split, is_pair=is_pair,
+                                    key1_name=key1_name, key2_name=key2_name, label_name=label_name,
+                                    label_map=label_map, device=device, batch_size=batch_size)
+            accs.append(acc)
+
+            s_dur = sync_time() - s_start
+            step_times.append(s_dur)
+
+            if step % 3 == 0 or step == total_steps:
+                print(f"[AE-Inverse] Pruned {step * 12:3d}/144 head instances ({step}/{total_steps} heads) | Acc: {acc:.4f} | Step Time: {s_dur:.2f}s")
+
+        total_dur = sync_time() - total_start
+        print(f"[AE-Inverse] Completed in {total_dur:.2f}s.")
+
+        del model_run, pruner
+        clear_memory()
+        return accs, step_times, total_dur
+
     # 3. Run Standard Static AE Pruning
-    accs_ae, times_ae, tot_time_ae = execute_ae_pruning_run()
+    if run_ae:
+        accs_ae, times_ae, tot_time_ae = execute_ae_pruning_run()
+    else:
+        accs_ae, times_ae, tot_time_ae = None, None, None
 
     # 4. Run Random Pruning Baseline
     if run_random:
         accs_rand, times_rand, tot_time_rand = execute_random_pruning_run()
     else:
-        accs_rand = [None] * len(accs_ae)
-        times_rand = [None] * len(times_ae)
+        accs_rand, times_rand, tot_time_rand = None, None, None
 
-    # 5. Save Benchmark and Timing DataFrames
+    # 5. Run Inverse AE Pruning
+    if run_inverse:
+        accs_inv, times_inv, tot_time_inv = execute_inverse_ae_pruning_run()
+    else:
+        accs_inv, times_inv, tot_time_inv = None, None, None
+
+    # 6. Save/Append Benchmark and Timing DataFrames
     heads_col = [i * 12 for i in range(total_steps + 1)]
-    benchmark_df = pd.DataFrame({
-        "Heads Pruned": heads_col,
-        "Accuracy_AE": accs_ae,
-        "Accuracy_Random": accs_rand
-    })
-
     benchmark_csv = os.path.join(output_dir, f"ALBERT_{task_name}_ae_benchmark_seed_{seed}.csv")
+
+    if os.path.exists(benchmark_csv):
+        benchmark_df = pd.read_csv(benchmark_csv)
+    else:
+        benchmark_df = pd.DataFrame({"Heads Pruned": heads_col})
+
+    if accs_ae is not None:
+        benchmark_df["Accuracy_AE"] = accs_ae
+    if accs_rand is not None:
+        benchmark_df["Accuracy_Random"] = accs_rand
+    if accs_inv is not None:
+        benchmark_df["Accuracy_AE_Inverse"] = accs_inv
+
     benchmark_df.to_csv(benchmark_csv, index=False)
     print(f"\nSaved benchmark results to: {benchmark_csv}")
 
-    timing_df = pd.DataFrame({
-        "Step": list(range(1, total_steps + 1)),
-        "Heads Pruned": [i * 12 for i in range(1, total_steps + 1)],
-        "Time_AE_sec": times_ae,
-        "Time_Random_sec": times_rand
-    })
     timing_csv = os.path.join(output_dir, f"ALBERT_{task_name}_ae_timing_seed_{seed}.csv")
+    if os.path.exists(timing_csv):
+        timing_df = pd.read_csv(timing_csv)
+    else:
+        timing_df = pd.DataFrame({
+            "Step": list(range(1, total_steps + 1)),
+            "Heads Pruned": [i * 12 for i in range(1, total_steps + 1)]
+        })
+
+    if times_ae is not None:
+        timing_df["Time_AE_sec"] = times_ae
+    if times_rand is not None:
+        timing_df["Time_Random_sec"] = times_rand
+    if times_inv is not None:
+        timing_df["Time_AE_Inverse_sec"] = times_inv
+
     timing_df.to_csv(timing_csv, index=False)
     print(f"Saved timing results to: {timing_csv}")
 
@@ -390,13 +463,15 @@ TASKS = {
 
 
 def main():
-    parser = argparse.ArgumentParser(description="ALBERT Static Attention Entropy (AE) & Random Pruning Benchmark")
+    parser = argparse.ArgumentParser(description="ALBERT Static Attention Entropy (AE) & Inverse AE Pruning Benchmark")
     parser.add_argument("seed_pos", type=int, nargs="?", default=None, help="Random seed (positional argument)")
     parser.add_argument("--task", type=str, default="all", choices=["all", "sst2", "mnli", "qnli"], help="Task to evaluate (default: all)")
     parser.add_argument("--seed", type=int, default=555, help="Random seed (default: 555)")
     parser.add_argument("--batch_size", type=int, default=64, help="Batch size (default: 64)")
     parser.add_argument("--num_samples", type=int, default=1000, help="Number of calibration samples (default: 1000)")
+    parser.add_argument("--no_ae", action="store_true", default=False, help="Disable standard AE pruning")
     parser.add_argument("--no_random", action="store_true", default=False, help="Disable Random pruning baseline")
+    parser.add_argument("--no_inverse", action="store_true", default=False, help="Disable Inverse AE pruning")
     parser.add_argument("--output_dir", type=str, default="experiments_results/glue/AE", help="Output directory for benchmark CSVs")
     args, _ = parser.parse_known_args()
 
@@ -406,6 +481,9 @@ def main():
     print(f"Execution Device: {device}")
 
     selected_tasks = [args.task.lower()] if args.task != "all" else list(TASKS.keys())
+    run_ae = not args.no_ae
+    run_random = not args.no_random
+    run_inv = not args.no_inverse
 
     for t in selected_tasks:
         cfg = TASKS[t]
@@ -424,7 +502,9 @@ def main():
             batch_size=args.batch_size,
             num_samples=args.num_samples,
             seed=seed,
-            run_random=(not args.no_random),
+            run_ae=run_ae,
+            run_random=run_random,
+            run_inverse=run_inv,
             output_dir=args.output_dir
         )
 
