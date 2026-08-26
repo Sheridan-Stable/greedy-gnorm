@@ -20,16 +20,15 @@ def sync_time():
 
 
 parser = argparse.ArgumentParser(description="BERT GLUE Pruning + Post-Pruning Fine-Tuning")
-parser.add_argument("seed_pos", type=int, nargs="?", default=None, help="Random seed (positional argument)")
-parser.add_argument("--seed", type=int, default=42, help="Random seed for data sampling")
+parser.add_argument("--seed", type=int, default=555, help="Random seed for data sampling")
 parser.add_argument("--prune_steps", type=int, default=120,
                     help="Number of heads to prune before fine-tuning (default: 120 = 120/144 heads, ~83.3%%)")
 parser.add_argument("--finetune_epochs", type=int, default=3, help="Number of fine-tuning epochs after pruning")
 parser.add_argument("--lr", type=float, default=2e-5, help="Learning rate for fine-tuning")
 parser.add_argument("--finetune_batch_size", type=int, default=32, help="Batch size for fine-tuning")
-args, _ = parser.parse_known_args()
+args = parser.parse_args()
 
-SEED = args.seed_pos if args.seed_pos is not None else args.seed
+SEED = args.seed
 print(f"Using random seed: {SEED}")
 print(f"Pruning {args.prune_steps} heads, then fine-tuning for {args.finetune_epochs} epochs at lr={args.lr}")
 

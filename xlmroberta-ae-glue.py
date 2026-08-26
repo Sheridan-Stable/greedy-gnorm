@@ -469,8 +469,7 @@ TASKS = {
 
 
 def main():
-    parser = argparse.ArgumentParser(description="XLM-RoBERTa Static Attention Entropy (AE) & Inverse AE Pruning Benchmark")
-    parser.add_argument("seed_pos", type=int, nargs="?", default=None, help="Random seed (positional argument)")
+    parser = argparse.ArgumentParser(description="XLM-RoBERTa Attention Entropy (AE) & Inverse AE Pruning Benchmark")
     parser.add_argument("--task", type=str, default="all", choices=["all", "sst2", "mnli", "qqp"], help="Task to evaluate (default: all)")
     parser.add_argument("--seed", type=int, default=555, help="Random seed (default: 555)")
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size (default: 128)")
@@ -479,9 +478,9 @@ def main():
     parser.add_argument("--no_random", action="store_true", default=False, help="Disable Random pruning baseline")
     parser.add_argument("--no_inverse", action="store_true", default=False, help="Disable Inverse AE pruning")
     parser.add_argument("--output_dir", type=str, default="experiments_results/glue/AE", help="Output directory for benchmark CSVs")
-    args, _ = parser.parse_known_args()
+    args = parser.parse_args()
 
-    seed = args.seed_pos if args.seed_pos is not None else args.seed
+    seed = args.seed
     print(f"Using random seed: {seed}")
     device = "cuda" if torch.cuda.is_available() else ("mps" if hasattr(torch.backends, "mps") and torch.backends.mps.is_available() else "cpu")
     print(f"Execution Device: {device}")

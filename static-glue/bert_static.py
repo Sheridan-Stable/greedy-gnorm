@@ -342,9 +342,8 @@ def run_bert_static(seed=42, output_dir="static-glue/experiments_results"):
             print("Skipping to next task...")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("seed_pos", type=int, nargs="?", default=None)
-    parser.add_argument("--seed", type=int, default=42)
-    args, _ = parser.parse_known_args()
-    seed = args.seed_pos if args.seed_pos is not None else args.seed
-    run_bert_static(seed=seed)
+    parser = argparse.ArgumentParser(description="BERT Static Pruning Benchmark")
+    parser.add_argument("--seed", type=int, default=555, help="Random seed (default: 555)")
+    args = parser.parse_args()
+    run_bert_static(seed=args.seed)
+

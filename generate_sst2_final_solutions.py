@@ -1,14 +1,6 @@
 """
-generate_sst2_final_solutions.py
-
 Iteratively prunes attention heads dynamically using Greedy-Gnorm and TransformerPruner
-on SST-2 for BERT, ALBERT, RoBERTa, and XLM-RoBERTa, and plots the final 2x2 mask figure:
-- figures/allfinalsolutions_sst2.pdf
-- figures/allfinalsolutions_sst2.png
-- figures/masks_sst2.pt (cached masks)
-
-Usage:
-    python generate_sst2_final_solutions.py [--prune-ratio 0.75] [--albert-prune-ratio 0.25] [--num-samples 1000] [--seed 555]
+on SST-2 for BERT, ALBERT, RoBERTa, and XLM-RoBERTa, and plots the final 2x2 mask heatmap.
 """
 
 import os
@@ -597,7 +589,7 @@ def plot_all_final_solutions_sst2(masks, output_dir=None, dpi=300):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate SST-2 final pruning mask figure across 4 models using dynamic Greedy-Gnorm.")
+    parser = argparse.ArgumentParser(description="Generate SST-2 final pruning masks across 4 models using dynamic Greedy-Gnorm.")
     parser.add_argument("--prune-ratio", type=float, default=0.75, help="Pruning ratio for BERT, RoBERTa, XLM-RoBERTa (default: 0.75 = 75%% heads pruned / 108 heads)")
     parser.add_argument("--albert-prune-ratio", type=float, default=0.25, help="Pruning ratio for ALBERT (default: 0.25 = 25%% heads pruned / 3 heads)")
     parser.add_argument("--num-samples", type=int, default=1000, help="Number of training samples to estimate Gnorm per step (default: 1000)")

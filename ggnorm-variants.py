@@ -12,13 +12,13 @@ import torch.nn.modules.linear
 import argparse
 import random
 
-parser = argparse.ArgumentParser(description="BERT GLUE Greedy Gnorm Variants Benchmark")
-parser.add_argument("seed_pos", type=int, nargs="?", default=None, help="Random seed (positional argument)")
-parser.add_argument("--seed", type=int, default=42, help="Random seed for data sampling")
-args, _ = parser.parse_known_args()
+parser = argparse.ArgumentParser(description="BERT GLUE Greedy-Gnorm Variants Benchmark (Product vs. Sum vs. Max)")
+parser.add_argument("--seed", type=int, default=555, help="Random seed (default: 555)")
+args = parser.parse_args()
 
-SEED = args.seed_pos if args.seed_pos is not None else args.seed
+SEED = args.seed
 print(f"Using random seed: {SEED}")
+
 
 def sample_datapoints(dataset_column, num_samples=1000, seed=SEED):
     total = len(dataset_column)
