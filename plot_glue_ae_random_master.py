@@ -4,7 +4,7 @@ plot_glue_ae_random_master.py
 Master Grid Overview Plot comparing:
 1. Greedy-Gnorm
 2. Attention Entropy (AE)
-3. Random Pruning
+3. Inverse AE
 
 across all models (BERT, RoBERTa, XLM-RoBERTa, ALBERT) and GLUE tasks (SST-2, MNLI, QNLI, QQP).
 
@@ -63,14 +63,14 @@ METHODS_META = {
         "color": "#1f77b4"  # Blue
     },
     "Accuracy_AE": {
-        "label": "Attention Entropy (AE)",
+        "label": "AE",
         "style": "-",
         "color": "#d62728"  # Crimson Red
     },
-    "Accuracy_Random": {
-        "label": "Random Pruning",
-        "style": "--",
-        "color": "#7f7f7f"  # Gray
+    "Accuracy_AE_Inverse": {
+        "label": "Inverse AE",
+        "style": "-",
+        "color": "#2ca02c"  # Green
     }
 }
 
@@ -123,8 +123,8 @@ def load_combined_stats(model_name: str, task_name: str):
             merged['Accuracy_Gnorm'] = df_gnorm['Accuracy_Gnorm']
         if 'Accuracy_AE' in df_ae.columns:
             merged['Accuracy_AE'] = df_ae['Accuracy_AE']
-        if 'Accuracy_Random' in df_ae.columns:
-            merged['Accuracy_Random'] = df_ae['Accuracy_Random']
+        if 'Accuracy_AE_Inverse' in df_ae.columns:
+            merged['Accuracy_AE_Inverse'] = df_ae['Accuracy_AE_Inverse']
 
         all_runs.append(merged)
 
@@ -147,7 +147,7 @@ def load_combined_stats(model_name: str, task_name: str):
 def plot_master(output_dir: str, dpi: int = 300, show: bool = False):
     fig, axes = plt.subplots(4, 3, figsize=(15, 14), sharey=False)
     fig.suptitle(
-        "GLUE Benchmark: Greedy-Gnorm vs. Attention Entropy vs. Random Pruning",
+        "Greedy-Gnorm vs. AE and Inverse AE",
         fontsize=16, fontweight='bold', y=0.995
     )
 
