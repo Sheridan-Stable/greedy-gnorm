@@ -108,8 +108,8 @@ def get_new_head_mask_basedonAE_inverse(head_mask_previous, AE_matrix):
 def compute_raw_ae_matrix(ds, model, tokenizer, is_pair=False, key1_name="sentence", key2_name=None,
                           batch_size=128, device="cuda", num_samples=1000, seed=555, eps=1e-7):
     """
-    Computes epsilon-rectified Attention Entropy (AE) matrix:
-        H(A) = - 1/S * sum_{i,j} (A_ij + eps) * log(A_ij + eps)
+    Computes Attention Entropy (AE) matrix:
+        H(A) = - 1/S * sum_{i,j} A_ij * log(A_ij + eps)
     Averaged across calibration samples.
     """
     model.to(device)
@@ -145,7 +145,7 @@ def compute_raw_ae_matrix(ds, model, tokenizer, is_pair=False, key1_name="senten
                 A = attns[layer_idx]
                 if A.size(1) == 0:
                     continue
-                token_entropy = (-(A + eps).log() * (A + eps)).sum(dim=-1).mean(dim=-1)
+                token_entropy = (-(A + eps).log() * A).sum(dim=-1).mean(dim=-1)
                 entropy_accum[layer_idx] += token_entropy.sum(dim=0)
 
             del inputs, outputs, attns
