@@ -23,6 +23,7 @@ parser.add_argument("--prune_steps", type=int, default=108, help="Heads to prune
 parser.add_argument("--finetune_epochs", type=int, default=3, help="Fine-tuning epochs")
 parser.add_argument("--lr", type=float, default=2e-5, help="Learning rate")
 parser.add_argument("--finetune_batch_size", type=int, default=32, help="Fine-tuning batch size")
+parser.add_argument("--task", type=str, default="all", choices=["all", "sst2", "mnli", "qnli"], help="Task to run (sst2, mnli, qnli, or all)")
 args = parser.parse_args()
 
 SEED = args.seed
@@ -158,18 +159,20 @@ def make_sst2_fns(ds, tokenizer, model, device='cuda'):
 
 
 def make_mnli_fns(ds, tokenizer, model, device='cuda'):
+    eval_label_map = torch.tensor([2, 0, 1], device=device)
+    train_label_map = torch.tensor([1, 2, 0], device=device)
+
     def get_acc():
         model.to(device); model.eval()
         correct = total = 0
         p = ds['validation_matched']['premise']
         h = ds['validation_matched']['hypothesis']
         l = ds['validation_matched']['label']
-        label_map = torch.tensor([2, 0, 1], device=device)
         with torch.no_grad():
             for i in range(0, len(p), 128):
                 inp = tokenizer(p[i:i+128], h[i:i+128], return_tensors='pt', padding=True, truncation=True)
                 inp = {k: v.to(device) for k, v in inp.items()}
-                preds = label_map[torch.argmax(model(**inp).logits, dim=-1)]
+                preds = eval_label_map[torch.argmax(model(**inp).logits, dim=-1)]
                 correct += (preds == torch.tensor(l[i:i+128]).to(device)).sum().item()
                 total += len(l[i:i+128])
         return correct / total
@@ -219,7 +222,8 @@ def make_mnli_fns(ds, tokenizer, model, device='cuda'):
                 inp = tokenizer(ep[i:i+args.finetune_batch_size], eh[i:i+args.finetune_batch_size],
                                 return_tensors='pt', padding=True, truncation=True)
                 inp = {k: v.to(device) for k, v in inp.items()}
-                inp['labels'] = torch.tensor(el[i:i+args.finetune_batch_size]).to(device)
+                raw_labels = torch.tensor(el[i:i+args.finetune_batch_size]).to(device)
+                inp['labels'] = train_label_map[raw_labels]
                 opt.zero_grad()
                 loss = model(**inp).loss
                 loss.backward()
@@ -303,10 +307,6 @@ def make_qnli_fns(ds, tokenizer, model, device='cuda'):
 
 
 def run_task(task_name, get_acc, get_gnorm, finetune, model_tag):
-    summary_path = f"experiments_results/finetune/{model_tag}_{task_name}_gnorm_finetune_summary_seed_{SEED}_{args.prune_steps}.csv"
-    if os.path.exists(summary_path):
-        print(f"\n[SKIP] {model_tag} {task_name} seed={SEED} prune_steps={args.prune_steps} already done ({summary_path})")
-        return
     print(f"\n{'='*60}\nTask: {task_name}  |  prune_steps={args.prune_steps}\n{'='*60}")
     head_mask = torch.ones(12, 12)
     accs = [get_acc()]
@@ -345,34 +345,37 @@ def run_task(task_name, get_acc, get_gnorm, finetune, model_tag):
 # ─────────────────────────────────────────────────────────────
 # SST-2
 # ─────────────────────────────────────────────────────────────
-print("Loading BERT-SST-2...")
-tokenizer = AutoTokenizer.from_pretrained("textattack/bert-base-uncased-SST-2")
-model     = AutoModelForSequenceClassification.from_pretrained("textattack/bert-base-uncased-SST-2", output_attentions=True)
-ds        = load_dataset("glue", "sst2")
-get_acc, get_gnorm, finetune = make_sst2_fns(ds, tokenizer, model)
-run_task("sst2", get_acc, get_gnorm, finetune, "BERT")
-del model, tokenizer, ds; gc.collect()
+if args.task in ["all", "sst2"]:
+    print("Loading BERT-SST-2...")
+    tokenizer = AutoTokenizer.from_pretrained("textattack/bert-base-uncased-SST-2")
+    model     = AutoModelForSequenceClassification.from_pretrained("textattack/bert-base-uncased-SST-2", output_attentions=True)
+    ds        = load_dataset("glue", "sst2")
+    get_acc, get_gnorm, finetune = make_sst2_fns(ds, tokenizer, model)
+    run_task("sst2", get_acc, get_gnorm, finetune, "BERT")
+    del model, tokenizer, ds; gc.collect()
 
 # ─────────────────────────────────────────────────────────────
 # MNLI
 # ─────────────────────────────────────────────────────────────
-print("Loading BERT-MNLI...")
-tokenizer = AutoTokenizer.from_pretrained("textattack/bert-base-uncased-MNLI")
-model     = AutoModelForSequenceClassification.from_pretrained("textattack/bert-base-uncased-MNLI", output_attentions=True)
-ds        = load_dataset("glue", "mnli")
-get_acc, get_gnorm, finetune = make_mnli_fns(ds, tokenizer, model)
-run_task("mnli", get_acc, get_gnorm, finetune, "BERT")
-del model, tokenizer, ds; gc.collect()
+if args.task in ["all", "mnli"]:
+    print("Loading BERT-MNLI...")
+    tokenizer = AutoTokenizer.from_pretrained("textattack/bert-base-uncased-MNLI")
+    model     = AutoModelForSequenceClassification.from_pretrained("textattack/bert-base-uncased-MNLI", output_attentions=True)
+    ds        = load_dataset("glue", "mnli")
+    get_acc, get_gnorm, finetune = make_mnli_fns(ds, tokenizer, model)
+    run_task("mnli", get_acc, get_gnorm, finetune, "BERT")
+    del model, tokenizer, ds; gc.collect()
 
 # ─────────────────────────────────────────────────────────────
 # QNLI
 # ─────────────────────────────────────────────────────────────
-print("Loading BERT-QNLI...")
-tokenizer = AutoTokenizer.from_pretrained("textattack/bert-base-uncased-QNLI")
-model     = AutoModelForSequenceClassification.from_pretrained("textattack/bert-base-uncased-QNLI", output_attentions=True)
-ds        = load_dataset("glue", "qnli")
-get_acc, get_gnorm, finetune = make_qnli_fns(ds, tokenizer, model)
-run_task("qnli", get_acc, get_gnorm, finetune, "BERT")
-del model, tokenizer, ds; gc.collect()
+if args.task in ["all", "qnli"]:
+    print("Loading BERT-QNLI...")
+    tokenizer = AutoTokenizer.from_pretrained("textattack/bert-base-uncased-QNLI")
+    model     = AutoModelForSequenceClassification.from_pretrained("textattack/bert-base-uncased-QNLI", output_attentions=True)
+    ds        = load_dataset("glue", "qnli")
+    get_acc, get_gnorm, finetune = make_qnli_fns(ds, tokenizer, model)
+    run_task("qnli", get_acc, get_gnorm, finetune, "BERT")
+    del model, tokenizer, ds; gc.collect()
 
-print("\nAll BERT tasks complete.")
+print("\nTask execution complete.")
