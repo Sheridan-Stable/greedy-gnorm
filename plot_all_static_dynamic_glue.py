@@ -21,6 +21,7 @@ plt.rcParams['savefig.bbox'] = 'tight'
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DYNAMIC_DIR = os.path.join(BASE_DIR, "experiments_results", "glue")
 STATIC_DIR = os.path.join(BASE_DIR, "static-glue", "experiments_results")
+AE_DIR = os.path.join(DYNAMIC_DIR, "AE")
 
 MODELS_META = {
     "BERT": {"tasks": ["sst2", "mnli", "qnli"], "display_name": "BERT"},
@@ -34,7 +35,8 @@ METHODS_META = {
     "Accuracy_Taylor": {"label": "Taylor Importance\n(Dynamic)", "style": "-", "color": "#ff7f0e"},
     "Accuracy_Static_Taylor": {"label": "Taylor Importance\n(Static)", "style": "--", "color": "#d62728"},
     "Accuracy_Attr": {"label": "Self-Attention Attribution\n(Dynamic, $m=10$)", "style": "-", "color": "#2ca02c"},
-    "Accuracy_Static_AttAttr": {"label": "Self-Attention Attribution\n(Static, $m=20$)", "style": "--", "color": "#9467bd"}
+    "Accuracy_Static_AttAttr": {"label": "Self-Attention Attribution\n(Static, $m=20$)", "style": "--", "color": "#9467bd"},
+    "Accuracy_AE": {"label": "Attention Entropy\n(Static)", "style": "--", "color": "#8c564b"}
 }
 
 TASK_DISPLAY_NAMES = {"sst2": "SST-2", "mnli": "MNLI", "qnli": "QNLI", "qqp": "QQP"}
@@ -50,12 +52,18 @@ def load_combined_stats(model_name: str, task_name: str):
     for s in SEEDS:
         dyn_file = os.path.join(DYNAMIC_DIR, f"{prefix}_{t_lower}_benchmark_seed_{s}.csv")
         stat_file = os.path.join(STATIC_DIR, f"{prefix}_{t_lower}_static_benchmark_seed_{s}.csv")
+        ae_file = os.path.join(AE_DIR, f"{prefix}_{t_lower}_ae_benchmark_seed_{s}.csv")
+        if not os.path.exists(ae_file):
+            alt_ae = os.path.join(DYNAMIC_DIR, f"{prefix}_{t_lower}_ae_benchmark_seed_{s}.csv")
+            if os.path.exists(alt_ae):
+                ae_file = alt_ae
 
         if not os.path.exists(dyn_file) or not os.path.exists(stat_file):
             continue
 
         df_dyn = pd.read_csv(dyn_file)
         df_stat = pd.read_csv(stat_file)
+        df_ae = pd.read_csv(ae_file) if os.path.exists(ae_file) else None
 
         merged = pd.DataFrame()
         merged['Heads Pruned'] = df_dyn['Heads Pruned']
@@ -68,6 +76,9 @@ def load_combined_stats(model_name: str, task_name: str):
         for col in ['Accuracy_Static_Taylor', 'Accuracy_Static_AttAttr']:
             if col in df_stat.columns:
                 merged[col] = df_stat[col]
+
+        if df_ae is not None and 'Accuracy_AE' in df_ae.columns:
+            merged['Accuracy_AE'] = df_ae['Accuracy_AE']
 
         all_runs.append(merged)
 
