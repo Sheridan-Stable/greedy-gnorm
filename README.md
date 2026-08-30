@@ -1,6 +1,6 @@
-# Greedy-Gnorm: A gradient matrix norm-based method for attention head pruning
+# Greedy-Gnorm: A Gradient Matrix Norm-Based Method for Attention Head Pruning
 
-This repository contains computer code for reproducing the results numerical described in the manuscript “Greedy-Gnorm: A gradient matrix norm-based method for attention head pruning” (currently under review with Machine Learning - Springer Nature).
+This repository contains computer code for reproducing the results numerical described in the manuscript “Greedy-Gnorm: A Gradient Matrix Norm-Based Method for Attention Head Pruning” (currently under review with Machine Learning - Springer Nature).
 
 ---
 
